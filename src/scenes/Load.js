@@ -9,20 +9,23 @@ class Load extends Phaser.Scene {
         let loadingBar = this.add.graphics();
         this.load.on("progress", (value) => {
             loadingBar.clear();
-            loadingBar.fillStyle(0xDABBED, 1);
+            loadingBar.fillStyle(0x000000, 1);
             loadingBar.fillRect(0, height/2, width * value, 5);
         })
-        this.load.on("complete", () => {
+        this.load.on("Complete", () => {
             loadingBar.destroy();
             
         })
+        this.load.json("dialogue", "./info.json");
         this.load.path = "./assets/"
+        //load images
         this.load.image("dashboard", "dashboard.png");
         this.load.image("steeringWheel", "wheel.png");
         this.load.image("dial", "dial.png");
         this.load.image("bus", "bus.png");
         this.load.image("pause", "pause.png");
         this.load.image("road", "road.png");
+        this.load.image("burger", "burger_PLACEHOLDER.png");
         this.load.spritesheet("glovebox", "glovebox.png", {
             frameWidth: 315, 
             frameHeight: 118, 
@@ -35,8 +38,14 @@ class Load extends Phaser.Scene {
             startFrame: 0,
             endFrame: 7
         })
+        //load fonts
         this.load.bitmapFont("titleFont", "title_font.png", "title_font.xml")
         this.load.bitmapFont("subtitleFont", "subtitle_font.png", "subtitle_font.xml")
+        //load sound
+        this.load.audio("track1", "track_1.mp3");
+        this.load.audio("track2", "track_2.mp3");
+        this.load.audio("carStart", "car_start.mp3");
+
     }
 
     create() {
