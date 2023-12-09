@@ -7,6 +7,9 @@ class Play extends Phaser.Scene {
         //LOAD ANIMATIONS
         loadAnims(this);
 
+        //ADD JSON
+        const info = this.cache.json.get("dialogue");
+
         //VARIABLES
         let gloveboxOpen = false; //false for closed box, true for opened box
         let radioOn = true; //radio starts on
@@ -14,8 +17,14 @@ class Play extends Phaser.Scene {
         let gamePaused = false;
         let currentTrack = "track1";
         let zoomed = false;
+        //  for camera purposes
+        let carItems = []; 
+        let UiItems = [];
+        let pauseItems = [];
+        //  to track what text is scrolling
+        let phoneText = [];
 
-        //MUSIC
+        //MUSIC & SOUND
         let track1 = this.sound.add("track1", {
             mute: false,
             volume: 0.5,
@@ -27,6 +36,11 @@ class Play extends Phaser.Scene {
             loop: true
         });
         track1.play();
+        let ambiance = this.sound.add("ambiance", {
+            mute:false,
+            volume: 1,
+            loop: true
+        }).play();
 
         //SET THE SCENE
         const graphics = this.add.graphics();
@@ -41,74 +55,105 @@ class Play extends Phaser.Scene {
         graphics.fillGradientStyle(0x6ABE30, 0xAC3232, 0x6ABE30, 0xAC3232);
         let radioGradient = graphics.fillRect(456, 494, 57, 16);
         radioGradient.depth = -1;
+        carItems.push(radioGradient);
+        //camera follower
+        let camFollow = this.add.rectangle(carWidth/2, height/2, carWidth, height);
         //  car content
         let dashboard = this.add.image(0, 0, "dashboard").setOrigin(0);
+        carItems.push(dashboard);
         let steeringWheel = this.add.sprite(174, 430, "steeringWheel").setInteractive({
             hitArea: this.add.circle(160, 252, 176),
             useHandCursor: true 
         });
+        carItems.push(steeringWheel);
         let glovebox = this.add.sprite(635, 470, "glovebox").setOrigin(0).setInteractive({
             hitArea: gloveHitbox,
             useHandCursor: true
         });
+        carItems.push(glovebox);
         let radioSwitch = this.add.sprite(456, 494, "radioSwitch").setOrigin(0).setInteractive({
             hitArea: radioGradient,
             useHandCursor: true
         });
         radioSwitch.depth = 1;
+        carItems.push(radioSwitch);
         let radioDial = this.add.sprite(485, 480, "dial").setInteractive({
             hitArea: this.add.circle(485, 480, 11),
             useHandCursor: true
         });
-        let burger = this.add.sprite(700, 285, "burger").setScale(0.25).setInteractive({
+        carItems.push(radioDial);
+        let radioImg = this.add.sprite(431, 383, "track1_img").setOrigin(0);
+        carItems.push(radioImg);
+        //  progress items
+        let burger = this.add.sprite(700, 285, "burger").setScale(0.75).setInteractive({
             useHandCursor: true
         })
-        let burgerPath = this.add.path(width/2, height/2);
-        burgerPath.lineTo(burger.x, burger.y);
-        burgerPath.closePath();
-        burgerPath.draw(graphics);
+        carItems.push(burger);
+        // let burgerPath = this.add.path(carWidth/2, height/2);
+        // burgerPath.lineTo(burger.x, burger.y);
+        // burgerPath.closePath();
+        // burgerPath.draw(graphics);
 
         //  outside the car
         let road = this.add.image(0, 0, "road").setOrigin(0);
-        road.depth = -2
+        road.depth = -2;
+        let bus = this.add.image(280, -100, "busBack").setOrigin(0).setScale(0.9);
+        bus.depth = -2;
 
         //UI
-        let UI = [];
-        //boredom meter
-        const boredomBG = this.add.rectangle(5, 5, 200, 30, 0xFFFFFF).setOrigin(0);
-        let boredomRect = this.add.rectangle(5, 5, 10, 30, 0xFF0000).setOrigin(0);
-        let boredomText = this.add.dynamicBitmapText(5, 5, "subtitleFont", "boredom meter", 32).setOrigin(0);
-        //pause button
-        let pause = this.add.sprite(width-32, 32, "pause").setInteractive({
-            useHandCursor: true
-        })
-        pause.depth = 3;
-        //create pause menu
-        let pauseFilter = this.add.rectangle(0, 0, width, height, 0x000000, .5).setOrigin(0);
-        let pauseBG = this.add.rectangle(width/2, height/2, 450, 450, 0xFFFFFF);
-        let pauseTitle = this.add.dynamicBitmapText(width/2, height/4, "subtitleFont", "PAUSED", 80).setOrigin(0.5);
-        let pauseInfo = this.add.dynamicBitmapText(width/2, height/2, "titleFont", "back to menu", 32).setOrigin(0.5);
-        pauseInfo.setInteractive({
-            useHandCursor: true
-        })
-        pauseFilter.depth = -3;
-        pauseBG.depth = -3;
-        pauseTitle.depth = -3;
-        pauseInfo.depth = -3;
+        //general UI: should have boredom meter (background rect, filling rect, text) & pause
+        let UI = {
+            //boredom meter
+            boredomBG: this.add.rectangle(5, 5, 200, 30, 0xFFFFFF).setOrigin(0),
+            boredomRect: this.add.rectangle(5, 5, 0, 30, 0xFF0000).setOrigin(0),
+            boredomText: this.add.dynamicBitmapText(5, 5, "subtitleFont", "boredom meter", 32).setOrigin(0),
+            //pause button
+            pause: this.add.sprite(carWidth-32, 32, "pause").setInteractive({
+                useHandCursor: true
+            })
+        };
+        UI.pause.depth = 3;
+        //also an array of the subobjects for camera purposes
+        for(let prop of Object.keys(UI)){
+            UiItems.push(UI[prop]);
+        }
 
-        //camera config (got from Nathan's CameraLucida repo)
+        //pause menu UI: filter (shade over the screen), background white rect, "PAUSED title text, "back to menu" info button
+        let pauseMenu = {
+            pauseFilter: this.add.rectangle(carWidth/2, height/2, carWidth, height, 0x000000, .5),
+            pauseBG: this.add.rectangle(carWidth/2, height/2, 450, 450, 0xFFFFFF),
+            pauseTitle: this.add.dynamicBitmapText(carWidth/2, height/4, "subtitleFont", "PAUSED", 80).setOrigin(0.5),
+            pauseInfo: this.add.dynamicBitmapText(carWidth/2, height/2, "titleFont", "back to menu", 32).setOrigin(0.5)
+        }
+        //again, an array of the subobjects for camera purposes
+        for(let prop of Object.keys(pauseMenu)){
+            pauseItems.push(pauseMenu[prop]);
+            pauseMenu[prop].depth = -3;
+        }
+
+        //phone on the side UI
+        graphics.fillStyle(0x000000);
+        let phoneBorder = graphics.fillRoundedRect(carWidth, 0, width-carWidth, height, 30);
+        graphics.fillStyle(0xFFFFFF);
+        let phoneInner = graphics.fillRect(carWidth+30, 30, width-carWidth-60, height-60);
+
+        //now that we've got all the objects in: camera config! (got a lot of it from Nathan's CameraLucida repo)
         this.cameras.main.setBounds(0, 0, width, height);
-        this.cameras.main.setZoom(1);
-        this.cameras.main.ignore([boredomBG, boredomRect, boredomText]);
-        // this.cameras.main.ignore([pauseBG, pauseFilter, pauseTitle, boredomBG, boredomRect, pause]);
+        this.cameras.main.ignore(UiItems, pauseItems);
+        this.cameras.main.setViewport(0, 0, carWidth, height);
+        this.cameras.main.startFollow(camFollow);
         //UI camera config
-        this.UICamera = this.cameras.add(0, 0, width, height);
-        this.UICamera.ignore([dashboard, radioGradient, steeringWheel, glovebox, radioSwitch, radioDial, burger, road, pauseBG, pauseFilter, pauseTitle, pauseInfo])
+        this.UICamera = this.cameras.add(0, 0, carWidth, height);
+        this.UICamera.ignore([road, bus].concat(pauseItems).concat(carItems))
         //pause camera config
-        // this.pauseCamera = this.cameras.add(0, 0, width, height);
-        // this.pauseCamera.ignore([dashboard, radioGradient, steeringWheel, glovebox, radioSwitch, radioDial, burger, road, boredomBG, boredomRect]);
-        // this.UICamera.ignore([dashboard, radioGradient, steeringWheel, glovebox, radioSwitch, radioDial, burger, road]);
-        
+        // this.pauseCamera = this.cameras.add(0, 0, carWidth, height);
+        // this.pauseCamera.ignore([road, bus].concat(carItems).concat(UiItems));
+        // this.cameras.remove(this.pauseCamera, false);
+        //side text camera config
+        this.textCamera = this.cameras.add(carWidth, 0, 320, height);
+        this.textCamera.setBounds(carWidth, 0, width-carWidth, height);
+        this.textCamera.setViewport(carWidth, 0, width-carWidth, height);
+
         //I drew the image first, then found the coordinates of the image in the drawing app. That's why they're so irregular.
         //635 587: bottom left
         //651 492: top left
@@ -119,6 +164,7 @@ class Play extends Phaser.Scene {
 
         //steering wheel interactivity
         steeringWheel.on("pointerdown", () => {
+            this.addText(info.steering_wheel, phoneText);
             this.tweens.add({
                 targets: steeringWheel,
                 ease: "Bounce.easeIn",
@@ -146,18 +192,23 @@ class Play extends Phaser.Scene {
 
         //radio interactivity: turn on/off with switch, change radio station/spin dial
         radioSwitch.on("pointerdown", () => {
-            if(!radioOn) {
+            if(!radioOn) { //turn radio on
                 eval(currentTrack).play();
                 radioOn = true;
                 radioSwitch.play("radio-off");
+                radioImg.visible = true;
+                //I have a weird error where the texture doesn't update if the radio is off, so this is my solution.
+                radioImg.setTexture(currentTrack + "_img");
             }
-            else {
+            else { //turn radio off
                 eval(currentTrack).stop();
                 radioOn = false;
                 radioSwitch.play("radio-on")
+                radioImg.visible = false;
             }
         })
         radioDial.on("pointerdown", () => {
+            //tween: twist radio dial 180 degrees
             this.tweens.add({
                 targets: radioDial,
                 paused: true,
@@ -168,12 +219,14 @@ class Play extends Phaser.Scene {
                     duration: 100
                 }
             }).play();
+
             radioAngle += 180;
             if(radioAngle == 360){
                 radioAngle = 0;
             }
+            //change track
             eval(currentTrack).stop();
-            if(radioAngle == 0){
+            if(radioAngle == 0){ //dial facing up: "super spiffy" song
                 currentTrack = "track1";
             }
             else {
@@ -181,11 +234,12 @@ class Play extends Phaser.Scene {
             }
             if(radioOn){
                 eval(currentTrack).play();
+                radioImg.setTexture(currentTrack + "_img");
             }
         });
 
         //pausing/unpausing
-        pause.on("pointerdown", () => {
+        UI.pause.on("pointerdown", () => {
             //if pausing, bring menu forward (depth = 3). if unpausing, send back (depth = -3)
             let newDepth;
             if(!gamePaused){
@@ -193,43 +247,58 @@ class Play extends Phaser.Scene {
                 newDepth = 3;
                 //stop the music!
                 eval(currentTrack).pause();
+                pauseMenu.pauseInfo.setInteractive({
+                    useHandCursor: true
+                })
+                // this.cameras.remove(this.pauseCamera, false);
             }
             else {
                 gamePaused = false;
                 newDepth = -3;
                 eval(currentTrack).resume();
+                pauseMenu.pauseInfo.removeInteractive();
+                // this.cameras.addExisting(this.pauseCamera);
             }
-            pauseFilter.depth = newDepth;
-            pauseBG.depth = newDepth;
-            pauseTitle.depth = newDepth;
-            pauseInfo.depth = newDepth;
+            for(let prop of Object.keys(pauseMenu)){
+                pauseMenu[prop].depth = newDepth;
+            }
         });
 
+        //burger interactivity
         burger.on("pointerdown", () => {
-            console.log("burger click!");
-            let burgerStart = burgerPath.getStartPoint();
-            console.log(burgerStart);
-            console.log(burgerPath);
+            // let burgerStart = burgerPath.getStartPoint();
             // this.cameras.main.startFollow(burger)
             let zoomNum;
+            //zoom out
             if(zoomed){
                 zoomNum = 1;
                 zoomed = false;
                 burger.x = 700;
                 burger.y = 285;
+                //change pause menu size
+                // for(let prop of Object.keys(pauseMenu)){
+                //     pauseMenu[prop].setWidth(pauseMenu[prop].width*0.5);
+                //     pauseMenu[prop].setHeight(pauseMenu[prop].height*0.5);
+                // }
             }
+            //zoom in: dialogue
             else {
+                this.addText(info.burger_1, phoneText);
                 zoomNum = 2;
                 zoomed = true;
-                burger.x = width/2;
+                burger.x = carWidth/2;
                 burger.y = height/2;
+                // for(let prop of Object.keys(pauseMenu)){
+                //     pauseMenu[prop].setWidth(pauseMenu[prop].width*2);
+                //     pauseMenu[prop].setHeight(pauseMenu[prop].height*2);
+                // }
             }
             this.cameras.main.setZoom(zoomNum);
         });
 
         //menu button from pause menu
-        pauseInfo.on("pointerdown", () => {
-            eval(currentTrack).stop();
+        pauseMenu.pauseInfo.on("pointerdown", () => {
+            this.game.sound.stopAll();
             this.scene.start("menuScene");
         })
 
@@ -237,21 +306,65 @@ class Play extends Phaser.Scene {
         this.increaseBoredom = this.time.addEvent({
             delay: 100,
             callback: () => {
-                if(!gamePaused && boredomRect.width < boredomBG.width && !zoomed){
+                if(!gamePaused && UI.boredomRect.width < UI.boredomBG.width && !zoomed){
                     if(radioOn){
-                        boredomRect.width++;
+                        UI.boredomRect.width++;
                     }
                     else {
-                        boredomRect.width+=2;
+                        UI.boredomRect.width+=2;
                     }
                 }
-                else if(boredomRect.width >= boredomBG.width){
-                    eval(currentTrack).stop();
+                else if(UI.boredomRect.width >= UI.boredomBG.width){
+                    this.game.sound.stopAll();
                     this.scene.start("gameOverScene");
                 }
             },
             loop: true
         });
+
+        //opening scene: explain how the game works & all that
+    }
+
+    addText(text, phoneText) {
+        //adds text to phone screen
+        //tween text upwards??
+        //calculate the height of the text - how much we need to scoot everything else down
+        let textHeight = this.getTextHeight(text);
+        //then tween it to fit the new text
+        for(let textBlock of phoneText){
+            //to help with performance - don't tween if you're past the screen
+            if (textBlock.y <= 640) {
+                let newHeight = textBlock.y + textHeight;
+                this.add.tween({
+                    targets: textBlock,
+                    paused: true,
+                    yoyo: false,
+                    y: {
+                        from: textBlock.y,
+                        to: newHeight,
+                        duration: 100
+                    }
+                }).play();
+            }
+        }
+
+        //add the new text to the array
+        let newText = this.add.dynamicBitmapText(carWidth+40, 40, "textFont", text, 16)
+        newText.maxWidth = 270;
+        phoneText.push(newText);
+    }
+
+    getTextHeight(text){
+        //specifically for text on phone screen
+        /*pseudo:
+            1) get string length
+            2) divide string length by 23 (amount of letters that can fit per line, approx) -> store in variable
+            3) round the variable up to the nearest whole number
+            4) multiply by 25 (estimate for font size + line spacing) for total line space
+        */
+       let textLines = Math.ceil(text.length / 23);
+       textLines *= 25;
+       return textLines; //well that was easy
     }
 }
 

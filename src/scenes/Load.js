@@ -23,9 +23,12 @@ class Load extends Phaser.Scene {
         this.load.image("steeringWheel", "wheel.png");
         this.load.image("dial", "dial.png");
         this.load.image("bus", "bus.png");
+        this.load.image("busBack", "bus_back.png");
         this.load.image("pause", "pause.png");
         this.load.image("road", "road.png");
-        this.load.image("burger", "burger_PLACEHOLDER.png");
+        this.load.image("burger", "burger.png");
+        this.load.image("track1_img", "track_1.png");
+        this.load.image("track2_img", "track_2.png");
         this.load.spritesheet("glovebox", "glovebox.png", {
             frameWidth: 315, 
             frameHeight: 118, 
@@ -39,12 +42,14 @@ class Load extends Phaser.Scene {
             endFrame: 7
         })
         //load fonts
-        this.load.bitmapFont("titleFont", "title_font.png", "title_font.xml")
-        this.load.bitmapFont("subtitleFont", "subtitle_font.png", "subtitle_font.xml")
+        this.load.bitmapFont("titleFont", "title_font.png", "title_font.xml");
+        this.load.bitmapFont("subtitleFont", "subtitle_font.png", "subtitle_font.xml");
+        this.load.bitmapFont("textFont", "text_font.png", "text_font.xml");
         //load sound
         this.load.audio("track1", "track_1.mp3");
         this.load.audio("track2", "track_2.mp3");
         this.load.audio("carStart", "car_start.mp3");
+        this.load.audio("ambiance", "ambiance.mp3");
 
     }
 
