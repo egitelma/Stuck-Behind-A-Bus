@@ -29,6 +29,7 @@ class Load extends Phaser.Scene {
         this.load.image("burger", "burger.png");
         this.load.image("track1_img", "track_1.png");
         this.load.image("track2_img", "track_2.png");
+        this.load.image("phoneScreen", "phone_screen.png");
         this.load.spritesheet("glovebox", "glovebox.png", {
             frameWidth: 315, 
             frameHeight: 118, 

@@ -1,5 +1,10 @@
 {
     "burger_1": "A burger I bought earlier. I'm not hungry right now.",
     "burger_2": "A burger I bought earlier. It's actually looking pretty good right now.",
-    "steering_wheel": "I can jiggle the steering wheel. I shouldn't turn it; it's not like I'm moving, anyways."
+    "steering_wheel": "I can jiggle the steering wheel. I shouldn't turn it; it's not like I'm moving, anyways.",
+    "tutorial_1": "Ugh. Another long day of work and then I get stuck on this stupid road. \n[Click to advance]",
+    "tutorial_2": "This bus always takes the longest to move. And it's full of those annoying neighbor kids.",
+    "tutorial_3": "I feel like I'm going to go crazy. Especially if this takes longer than an hour.",
+    "tutorial_4": "At least there's stuff around this car that I can use to pass the time and ease my boredom.",
+    "tutorial_5": "I should start by turning on the radio. Then I'll be able to start relaxing."
 }
