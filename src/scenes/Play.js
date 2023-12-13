@@ -17,15 +17,19 @@ class Play extends Phaser.Scene {
         let gamePaused = true; //game starts paused, nothing is running, so we can do the tutorial
         let gloveboxOpen = false; //false for closed box, true for opened box
         let radioOn = false; //radio starts off
-        let zoomed = false; //we're zoomed out to start
+        this.zoomed = false; //we're zoomed out to start
         let tutorialOver = false;
+        let hungry = true;
         //  integers
         let radioAngle = 0; //for now, this is only ever 0 or 180. two stations
         let tutorialInt = 1;
+        let currentHour = 6;
+        let currentMinute = 0;
+        let maxHour = 8; //we can only make it to 8 unless we entertain ourselves
+        let sodaLevel = 5; //you can drink the soda five times
         //  strings
         let currentTrack = "track1";
         const tutorialString = "info.tutorial_"; //javascript immediately tell me to fuck off if i try to edit this plz
-        let clockTime = 600; //this is actually 6:00 starting time i'm just gonna modulus it up for the actual game time
         //  arrays
         //      for camera purposes
         let carItems = []; 
@@ -36,22 +40,51 @@ class Play extends Phaser.Scene {
         //      to track interactable items
         let interactables = [];
 
-        //MUSIC & SOUND
+        //AUDIO
+        //  music
+        //      track 1: "super spiffy"
         let track1 = this.sound.add("track1", {
             mute: false,
             volume: 0.5,
             loop: true
         });
+        //      track 2: "prairie evening"
         let track2 = this.sound.add("track2", {
             mute: false,
             volume: 0.5,
             loop: true
         });
+        //  sfx
+        //      car ambiance
         let ambiance = this.sound.add("ambiance", {
             mute:false,
-            volume: 1,
+            volume: 0.75,
             loop: true
         }).play();
+        //      burger eating
+        let burgerSfx = this.sound.add("burgerEat", {
+            mute: false,
+            volume: 1,
+            loop: false
+        });
+        //      soda drink
+        let sodaSfx = this.sound.add("sodaDrink", {
+            mute: false,
+            volume: 1,
+            loop: false
+        });
+        //      open glovebox
+        let gloveboxOpenSfx = this.sound.add("openGlovebox", {
+            mute: false,
+            volume: 1,
+            loop: false
+        });
+        //      close glovebox
+        let gloveboxCloseSfx = this.sound.add("closeGlovebox", {
+            mute: false,
+            volume: 1,
+            loop: false
+        });
 
         //An interactable GameObject (with the exception of the pause button) should be contained within a larger object. The container object's format is as follows:
         /* {
@@ -60,12 +93,23 @@ class Play extends Phaser.Scene {
             hitbox: the custom hitbox.
             }
         */
-        
-        //a little out of place - radio switch gradient/hitbox must be defined separately
+
+        //HITBOXES
+        //  a little out of place - radio switch gradient/hitbox must be defined separately
         graphics.fillGradientStyle(0x6ABE30, 0xAC3232, 0x6ABE30, 0xAC3232);
         let radioGradient = graphics.fillRect(456, 494, 57, 16);
         radioGradient.depth = -1;
         carItems.push(radioGradient);
+        //  glovebox open/close hitboxes
+        //      glovebox open
+        let gloveboxOpenHitbox = this.add.rectangle(635, 533, 315, 54).setOrigin(0);
+        //      glovebox closed
+        let gloveboxClosedHitbox = this.add.rectangle(635, 470, 296, 117).setOrigin(0);
+        //  soda hitboxes
+        //      soda in glovebox
+        let sodaUnfocusHitbox = this.add.rectangle(695, 510, 75, 38).setOrigin(0);
+        //  the hitbox to default to when something is removed
+        let trashHitbox = this.add.rectangle(-1000, -1000, 1, 1);
 
         //SET THE SCENE
         //  car content
@@ -84,14 +128,8 @@ class Play extends Phaser.Scene {
         let glovebox = {
             gameObject: this.add.sprite(635, 470, "glovebox").setOrigin(0),
             hitBool: true,
-            hitbox: new Phaser.Geom.Polygon([
-                635, 587, //bottom left
-                651, 492, //top left
-                931, 470, //top right
-                903, 572  //bottom right
-            ])
-            //i drew the image first, then found the coordinates of the image in the drawing app
-            //that's why they're so irregular
+            hitbox: gloveboxClosedHitbox
+            
         }
         carItems.push(glovebox.gameObject);
         interactables.push(glovebox);
@@ -124,6 +162,12 @@ class Play extends Phaser.Scene {
         }
         carItems.push(burger.gameObject);
         interactables.push(burger);
+        //      soda
+        let soda = {
+            gameObject: this.add.sprite(-1000, -1000, "soda"),
+            hitBool: true,
+            hitbox: sodaUnfocusHitbox
+        }
 
         //  outside the car
         //      road
@@ -132,6 +176,9 @@ class Play extends Phaser.Scene {
         //      bus
         let bus = this.add.image(280, -100, "busBack").setOrigin(0).setScale(0.9);
         bus.depth = -2;
+        //      filter for how dark it is outside
+        let outsideFilter = this.add.rectangle(0, 0, carWidth, height, 0x000000, 0.1).setOrigin(0);
+        outsideFilter.depth = -2;
 
         //UI
         //  general UI: should have boredom meter (background rect, filling rect, text) & pause
@@ -172,8 +219,27 @@ class Play extends Phaser.Scene {
         interactables.push(phoneInteractable);
         //      shaded rectangle for the time: top left is (15, 28)
         this.add.rectangle(carWidth+15, 28, 290, 20, 0x000000, 0.5).setOrigin(0);
-        //      the time
+        //      the actual time
+        let clockTime = this.add.text(carWidth+15, 28, currentHour + ":0" + currentMinute, {
+            fontFamily: "Courier New", //i'm so tired of bitmap fonts
+            fontSize: "13px",
+            color: "#FFFFFF",
+            align: "left",
+            padding: {
+                top: 5,
+                left: 5
+            }
+        })
 
+        //  interactable objects UI: text that appears when objects are able to be consumed
+        //      The Cloud: background for the text
+        let thoughtCloud = this.add.image(carWidth/2, height/2+150, "thoughtCloud").setScale(2);
+        thoughtCloud.visible = false;
+        UiItems.push(thoughtCloud);
+        //      borger
+        let burgerEatText = this.add.dynamicBitmapText(carWidth/2, height/2+150, "subtitleFont", "click to eat", 32).setOrigin(0.5);
+        burgerEatText.visible = false;
+        UiItems.push(burgerEatText);
         
 
         //now that we've got all the objects in: camera config! (got a lot of it from Nathan's CameraLucida repo)
@@ -207,19 +273,33 @@ class Play extends Phaser.Scene {
                 }
             }).play();
         })
-
         //      glovebox interactivity
         glovebox.gameObject.on("pointerdown", () => {
             if(!gloveboxOpen) {
                 //open the glovebox
                 gloveboxOpen = true;
                 glovebox.gameObject.play("glovebox-open");
+                gloveboxOpenSfx.play();
+                //  alter its hitbox
+                glovebox.hitbox = gloveboxOpenHitbox;
+                glovebox.gameObject.removeInteractive();
+                glovebox.gameObject.setInteractive({
+                    hitArea: glovebox.hitbox,
+                    useHandCursor: true
+                });
             }
             else {
                 //close the glovebox
                 gloveboxOpen = false;
                 glovebox.gameObject.play("glovebox-close");
+                gloveboxCloseSfx.play();
+                //  alter its hitbox
+                glovebox.hitbox = gloveboxClosedHitbox;
             }
+            //  set the actual hitbox rather than just changing the container object's attribute
+            glovebox.gameObject.input.hitArea = glovebox.hitbox
+            console.log(glovebox.hitbox);
+            console.log(glovebox.gameObject.input.hitArea);
         })
         //      radio interactivity
         //          turn on/off with switch
@@ -289,29 +369,66 @@ class Play extends Phaser.Scene {
                 radioImg.setTexture(currentTrack + "_img");
             }
         });
-
         //      burger interactivity
         burger.gameObject.on("pointerdown", () => {
-            let zoomNum;
-            if(zoomed){
+            if(this.zoomed){
                 //zoom out
-                zoomNum = 1;
-                zoomed = false;
                 //  move burger to original position (700, 285)
-                burger.gameObject.x = 700;
-                burger.gameObject.y = 285;
+                this.zoomObject(burger.gameObject, 700, 285);
+                //  if hungry
+                if (hungry) {
+                    //  make sure we keep those thoughts between us and the burger
+                    thoughtCloud.visible = false;
+                    burgerEatText.visible = false;
+                    //  eat the borger
+                    hungry = false;
+                    burgerSfx.play();
+                    //  remove the burger from the player's view
+                    burger.gameObject.setAlpha(0);
+                    burger.hitBool = true;
+                    burger.hitbox = trashHitbox;
+                    //  and our functions: show dialogue, and reduce boredom meter
+                    this.addText(info.burger_eaten, phoneText);
+                    this.reduceBoredom(50, UI.boredomRect);
+                    //  zoom out
+                    this.cameras.main.setZoom(1);
+                    this.zoomed = false;
+                }
             }
             else {
                 //zoom in
-                zoomNum = 2;
-                zoomed = true;
-                //  dialogue
-                this.addText(info.burger_1, phoneText);
                 //  move burger to center
-                burger.gameObject.x = carWidth/2;
-                burger.gameObject.y = height/2;
+                this.zoomObject(burger.gameObject);
+                //  if not hungry
+                if(!hungry){
+                    //  just run dialogue
+                    this.addText(info.burger_1, phoneText);
+                }
+                //  if hungry
+                else {
+                    //  hungry dialogue
+                    this.addText(info.burger_2, phoneText);
+                    //  show our thoughts: click to eat
+                    thoughtCloud.visible = true;
+                    burgerEatText.visible = true;
+                }
+                
+                
             }
-            this.cameras.main.setZoom(zoomNum);
+            // this.cameras.main.setZoom(zoomNum);
+        });
+        //      soda interactivity
+        soda.gameObject.on("pointerdown", () => {
+            if(this.zoomed){
+                //zoom out
+                this.zoomObject(soda.gameObject, -1000, -1000); //get tossed in the Trash Zone
+                console.log("soda zoom out");
+            }
+            else {
+                //zoom in
+                this.zoomObject(soda.gameObject);
+                console.log("soda zoom in");
+            }
         });
 
         //      pausing/unpausing
@@ -378,11 +495,39 @@ class Play extends Phaser.Scene {
         })
 
         //  timed
+        //      increasing the actual clock time
+        this.increaseClock = this.time.addEvent({
+            delay: 1000,
+            callback: () => {
+                if(!gamePaused) {
+                    currentMinute++;
+                    let minute = currentMinute;
+                    if(currentMinute == 60) {
+                        //  when an hour passes, increase the hour
+                        currentHour++;
+                        currentMinute = 0;
+                        minute = "00";
+                        //  also, it should get a little darker
+                        outsideFilter.setAlpha(outsideFilter.alpha + 0.1);
+                        //  progression event: get hungry after an hour
+                        if(currentHour == 7){
+                            this.addText(info.hungry, phoneText);
+                            hungry = true;
+                        }
+                    }
+                    else if(currentMinute < 10) {
+                        minute = "0" + currentMinute;
+                    }
+                    clockTime.setText(currentHour + ":" + minute);
+                }
+            },
+            loop: true
+        })
         //      increasing boredom meter
         this.increaseBoredom = this.time.addEvent({
             delay: 300,
             callback: () => {
-                if(!gamePaused && UI.boredomRect.width < UI.boredomBG.width && !zoomed){
+                if(!gamePaused && UI.boredomRect.width < UI.boredomBG.width && !this.zoomed){
                     //if game is: not paused, not zoomed in, and we haven't already exceeded the boredom meter
                     //  we get bored faster if there's no music playing
                     if(radioOn){
@@ -420,12 +565,14 @@ class Play extends Phaser.Scene {
             loop: false
         })
 
-    } //**END CREATE**
+    } // **END CREATE**
+
 
     //EXTERNAL FUNCTIONS
 
     //  get height of text in order to scroll properly
-    //      text is a string taken from info.json whose height is going to be calculated
+    //  parameters:
+    //      text - a string taken from info.json whose height is going to be calculated
     getTextHeight(text){
         //specifically for text on phone screen
         /*pseudo:
@@ -440,8 +587,9 @@ class Play extends Phaser.Scene {
     }
 
     //  add text to phone screen
-    //      text is a string taken from info.json, containing the text to be added to the phone screen
-    //      phoneText is an array of strings that are already present on the phone screen
+    //  parameters:
+    //      text - a string taken from info.json, containing the text to be added to the phone screen
+    //      phoneText - an array of strings that are already present on the phone screen
     addText(text, phoneText) {
         //adds text to phone screen
         //  calculate the height of the text - how much we need to scoot everything else down
@@ -470,7 +618,8 @@ class Play extends Phaser.Scene {
     }
 
     //  make all interactable objects interactable (for pause toggling & end of tutorial)
-    //      interactables is an array of container objects with the format:
+    //  parameters:
+    //      interactables - an array of container objects with the format:
     /* 
         {
             gameObject: the GameObject itself
@@ -497,14 +646,53 @@ class Play extends Phaser.Scene {
     }
 
     //  remove interactivity of all objects (for pause toggling)
-    //      see the comment above makeInteractable for info on the interactables array
+    //  parameters:
+    //      see the comment above makeInteractable
     removeInteractable(interactables) {
         //this is much shorter, but for organization it's an external function
         for(let item of interactables) {
             item.gameObject.removeInteractive();
         }
     }
-}
+
+    //  shrink boredom meter a specified amount
+    //  parameters:
+    //      reductionValue - an integer defining how much to remove from the boredom bar
+    //      boredomMeter - the actual meter to reduce the width from
+    reduceBoredom(reductionValue, boredomMeter){
+        //  if the boredom meter is too low, just set it to 0
+        if (boredomMeter.width-reductionValue < 0) {
+            boredomMeter.width = 0;
+        }
+        //  or else we just reduce it by the value (shrug)
+        else {
+            boredomMeter -= reductionValue;
+        }
+    }
+
+    //  zoom in or out, bring game object into focus or move it out of it
+    //  parameters:
+    //      gameObj - the game object to move
+    //      newX - optional parameter, the X value to move the object to (default carWidth/2)
+    //      newY - optional parameter, the Y value to move the object to (default height/2)
+    zoomObject(gameObj, newX=carWidth/2, newY=height/2){
+        //  check this.zoomed, it will show whether we are zooming in (value: false) or out (value: true)
+        let zoomNum;
+        if(!this.zoomed){
+            //  zoom in
+            zoomNum = 2;
+            this.zoomed = true;
+        }
+        else {
+            //  zoom out
+            zoomNum = 1;
+            this.zoomed = false;
+        }
+        this.cameras.main.setZoom(zoomNum);
+        gameObj.x = newX;
+        gameObj.y = newY;
+    }
+} // **END CLASS**
 
 //what to do in the car?
 //sing, check mirror, daydream, text (phone in UI?)

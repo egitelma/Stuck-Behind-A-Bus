@@ -37,4 +37,8 @@ track 1 ("super spiffy"): https://www.fesliyanstudios.com/royalty-free-music/dow
 track 2 ("prairie evening"): https://www.fesliyanstudios.com/royalty-free-music/download/prairie-evening/3028 
 car start sfx: https://pixabay.com/sound-effects/043210-carstartskidcrashwav-77417/ 
 car ambiance: https://pixabay.com/sound-effects/parking-lot-ambience-73908/ 
+eating sfx: https://pixabay.com/sound-effects/eating-sound-effect-36186/ 
+drinking sfx: https://pixabay.com/sound-effects/heavy-swallowwav-14682/ 
+open glovebox sfx: https://pixabay.com/sound-effects/open-toolbox-103809/ 
+close glovebox sfx: https://pixabay.com/sound-effects/lid-close-98389/ 
 */

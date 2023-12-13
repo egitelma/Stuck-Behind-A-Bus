@@ -16,9 +16,10 @@ class Load extends Phaser.Scene {
             loadingBar.destroy();
             
         })
+        //load json
         this.load.json("dialogue", "./info.json");
-        this.load.path = "./assets/"
         //load images
+        this.load.path = "./assets/img/";
         this.load.image("dashboard", "dashboard.png");
         this.load.image("steeringWheel", "wheel.png");
         this.load.image("dial", "dial.png");
@@ -30,7 +31,10 @@ class Load extends Phaser.Scene {
         this.load.image("track1_img", "track_1.png");
         this.load.image("track2_img", "track_2.png");
         this.load.image("phoneScreen", "phone_screen.png");
-        this.load.spritesheet("glovebox", "glovebox.png", {
+        this.load.image("thoughtCloud", "thought_cloud.png");
+        this.load.image("soda", "soda.png");
+        //  spritesheets
+        this.load.spritesheet("glovebox", "glovebox_soda.png", {
             frameWidth: 315, 
             frameHeight: 118, 
             startFrame: 0,
@@ -43,14 +47,21 @@ class Load extends Phaser.Scene {
             endFrame: 7
         })
         //load fonts
+        this.load.path = "./assets/fonts/";
         this.load.bitmapFont("titleFont", "title_font.png", "title_font.xml");
         this.load.bitmapFont("subtitleFont", "subtitle_font.png", "subtitle_font.xml");
         this.load.bitmapFont("textFont", "text_font.png", "text_font.xml");
+        this.load.bitmapFont("subtitleFontWhite", "subtitle_font_white.png", "subtitle_font_white.xml");
         //load sound
+        this.load.path = "./assets/audio/"
         this.load.audio("track1", "track_1.mp3");
         this.load.audio("track2", "track_2.mp3");
         this.load.audio("carStart", "car_start.mp3");
         this.load.audio("ambiance", "ambiance.mp3");
+        this.load.audio("burgerEat", "eating_sfx.mp3");
+        this.load.audio("sodaDrink", "gulp_sfx.mp3");
+        this.load.audio("openGlovebox", "open_box_sfx.mp3");
+        this.load.audio("closeGlovebox", "close_box_sfx.mp3");
 
     }
 
