@@ -21,37 +21,61 @@ class Load extends Phaser.Scene {
         //load images
         this.load.path = "./assets/img/";
         this.load.image("dashboard", "dashboard.png");
-        this.load.image("steeringWheel", "wheel.png");
-        this.load.image("dial", "dial.png");
         this.load.image("bus", "bus.png");
         this.load.image("busBack", "bus_back.png");
         this.load.image("pause", "pause.png");
-        this.load.image("road", "road.png");
-        this.load.image("burger", "burger.png");
         this.load.image("track1_img", "track_1.png");
         this.load.image("track2_img", "track_2.png");
         this.load.image("phoneScreen", "phone_screen.png");
         this.load.image("thoughtCloud", "thought_cloud.png");
-        this.load.image("soda", "soda.png");
         //  spritesheets
+        this.load.spritesheet("steeringWheel", "wheel.png", {
+            frameWidth: 347,
+            frameHeight: 353,
+            startFrame: 0,
+            endFrame: 1
+        })
+        this.load.spritesheet("dial", "dial.png", {
+            frameWidth: 21,
+            frameHeight: 21,
+            startFrame: 0,
+            endFrame: 1
+        })
+        this.load.spritesheet("soda", "soda.png", {
+            frameWidth: 76,
+            frameHeight: 100,
+            startFrame: 0,
+            endFrame: 3
+        })
+        this.load.spritesheet("burger", "burger.png", {
+            frameWidth: 120,
+            frameHeight: 90,
+            startFrame: 0,
+            endFrame: 1
+        })
         this.load.spritesheet("glovebox", "glovebox_soda.png", {
             frameWidth: 315, 
             frameHeight: 118, 
             startFrame: 0,
-            endFrame: 3
+            endFrame: 6
         });
         this.load.spritesheet("radioSwitch", "radio_switch.png", {
             frameWidth: 57,
             frameHeight: 16,
             startFrame: 0,
-            endFrame: 7
+            endFrame: 9
+        })
+        this.load.spritesheet("road", "road.png", {
+            frameWidth: 960,
+            frameHeight: 640,
+            startFrame: 0,
+            endFrame: 5
         })
         //load fonts
         this.load.path = "./assets/fonts/";
         this.load.bitmapFont("titleFont", "title_font.png", "title_font.xml");
         this.load.bitmapFont("subtitleFont", "subtitle_font.png", "subtitle_font.xml");
         this.load.bitmapFont("textFont", "text_font.png", "text_font.xml");
-        this.load.bitmapFont("subtitleFontWhite", "subtitle_font_white.png", "subtitle_font_white.xml");
         //load sound
         this.load.path = "./assets/audio/"
         this.load.audio("track1", "track_1.mp3");

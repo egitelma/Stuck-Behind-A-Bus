@@ -19,26 +19,30 @@ class Play extends Phaser.Scene {
         let radioOn = false; //radio starts off
         this.zoomed = false; //we're zoomed out to start
         let tutorialOver = false;
-        let hungry = true;
+        let gameOver = false;
+        let hungry = false;
         //  integers
         let radioAngle = 0; //for now, this is only ever 0 or 180. two stations
         let tutorialInt = 1;
-        let currentHour = 6;
+        let gameOverInt = 1;
+        let gameWonInt = 1;
+        let currentHour = 6; //start at 6:00
         let currentMinute = 0;
         let maxHour = 8; //we can only make it to 8 unless we entertain ourselves
-        let sodaLevel = 5; //you can drink the soda five times
+        let sodaLevel = 5; //you can drink the soda five times [insert donkey kong meme]
         //  strings
         let currentTrack = "track1";
         const tutorialString = "info.tutorial_"; //javascript immediately tell me to fuck off if i try to edit this plz
+        const gameOverString = "info.gameover_";
+        const gameWonString = "info.gamewin_";
         //  arrays
         //      for camera purposes
         let carItems = []; 
         let UiItems = [];
-        let pauseItems = [];
         //      to track what text is scrolling
         let phoneText = [];
         //      to track interactable items
-        let interactables = [];
+        this.interactables = [];
 
         //AUDIO
         //  music
@@ -70,7 +74,7 @@ class Play extends Phaser.Scene {
         //      soda drink
         let sodaSfx = this.sound.add("sodaDrink", {
             mute: false,
-            volume: 1,
+            volume: 2,
             loop: false
         });
         //      open glovebox
@@ -86,30 +90,12 @@ class Play extends Phaser.Scene {
             loop: false
         });
 
-        //An interactable GameObject (with the exception of the pause button) should be contained within a larger object. The container object's format is as follows:
-        /* {
-            gameObject: the GameObject itself, initialized as NON-INTERACTABLE (but once the tutorial is over, becomes interactable)
-            hitBool: whether the object has a custom hitbox
-            hitbox: the custom hitbox.
-            }
-        */
-
         //HITBOXES
         //  a little out of place - radio switch gradient/hitbox must be defined separately
         graphics.fillGradientStyle(0x6ABE30, 0xAC3232, 0x6ABE30, 0xAC3232);
         let radioGradient = graphics.fillRect(456, 494, 57, 16);
         radioGradient.depth = -1;
         carItems.push(radioGradient);
-        //  glovebox open/close hitboxes
-        //      glovebox open
-        let gloveboxOpenHitbox = this.add.rectangle(635, 533, 315, 54).setOrigin(0);
-        //      glovebox closed
-        let gloveboxClosedHitbox = this.add.rectangle(635, 470, 296, 117).setOrigin(0);
-        //  soda hitboxes
-        //      soda in glovebox
-        let sodaUnfocusHitbox = this.add.rectangle(695, 510, 75, 38).setOrigin(0);
-        //  the hitbox to default to when something is removed
-        let trashHitbox = this.add.rectangle(-1000, -1000, 1, 1);
 
         //SET THE SCENE
         //  car content
@@ -117,68 +103,51 @@ class Play extends Phaser.Scene {
         let dashboard = this.add.image(0, 0, "dashboard").setOrigin(0);
         carItems.push(dashboard);
         //      steering wheel
-        let steeringWheel = {
-            gameObject: this.add.sprite(174, 430, "steeringWheel"),
-            hitBool: true,
-            hitbox: this.add.circle(160, 252, 176, 0x000000, 0)
-        };
-        carItems.push(steeringWheel.gameObject);
-        interactables.push(steeringWheel);
+        let steeringWheel = this.add.sprite(174, 430, "steeringWheel");
+        carItems.push(steeringWheel);
+        this.interactables.push(steeringWheel);
         //      glovebox
-        let glovebox = {
-            gameObject: this.add.sprite(635, 470, "glovebox").setOrigin(0),
-            hitBool: true,
-            hitbox: gloveboxClosedHitbox
-            
-        }
-        carItems.push(glovebox.gameObject);
-        interactables.push(glovebox);
+        //          main glovebox
+        let glovebox = this.add.sprite(635, 470, "glovebox").setOrigin(0);
+        carItems.push(glovebox);
+        this.interactables.push(glovebox);
+        //          glovebox opened lid
+        let gloveboxLid = this.add.sprite(-1000, -1000, "glovebox").setFrame(6).setOrigin(0);
+        gloveboxLid.depth = 1;
+        carItems.push(gloveboxLid);
+        this.interactables.push(gloveboxLid);
         //      radio on/off switch
-        let radioSwitch = {
-            gameObject: this.add.sprite(456, 494, "radioSwitch", 7).setOrigin(0),
-            hitBool: true,
-            hitbox: radioGradient
-        }
-        radioSwitch.gameObject.depth = 1;
-        carItems.push(radioSwitch.gameObject);
-        interactables.push(radioSwitch);
+        let radioSwitch = this.add.sprite(456, 494, "radioSwitch", 7).setOrigin(0)
+        radioSwitch.depth = 1;
+        carItems.push(radioSwitch);
+        this.interactables.push(radioSwitch);
         //      radio dial to change channel
-        let radioDial = {
-            gameObject: this.add.sprite(485, 480, "dial"),
-            hitBool: true,
-            hitbox: this.add.circle(485, 480, 11, 0x000000, 0)
-        }
-        carItems.push(radioDial.gameObject);
-        interactables.push(radioDial);
+        let radioDial = this.add.sprite(485, 480, "dial")
+        carItems.push(radioDial);
+        this.interactables.push(radioDial);
         //      non-interactable: radio display
         let radioImg = this.add.sprite(431, 383, "track1_img").setOrigin(0);
         radioImg.visible = false;
         carItems.push(radioImg);
         //  progress items
         //      burger
-        let burger = {
-            gameObject: this.add.sprite(700, 285, "burger").setScale(0.75),
-            hitBool: false
-        }
-        carItems.push(burger.gameObject);
-        interactables.push(burger);
+        let burger = this.add.sprite(700, 285, "burger").setScale(0.75);
+        carItems.push(burger);
+        this.interactables.push(burger);
         //      soda
-        let soda = {
-            gameObject: this.add.sprite(-1000, -1000, "soda"),
-            hitBool: true,
-            hitbox: sodaUnfocusHitbox
-        }
+        let soda = this.add.sprite(-1000, -1000, "soda", 1);
+        carItems.push(soda);
+        this.interactables.push(soda);
 
         //  outside the car
         //      road
-        let road = this.add.image(0, 0, "road").setOrigin(0);
+        let road = this.add.sprite(0, 0, "road").setOrigin(0);
         road.depth = -2;
         //      bus
-        let bus = this.add.image(280, -100, "busBack").setOrigin(0).setScale(0.9);
+        let bus = this.add.image(500, 10, "busBack").setOrigin(0.5, 0.25).setScale(0.9);
         bus.depth = -2;
         //      filter for how dark it is outside
-        let outsideFilter = this.add.rectangle(0, 0, carWidth, height, 0x000000, 0.1).setOrigin(0);
-        outsideFilter.depth = -2;
+        let outsideFilter = this.add.rectangle(0, 0, carWidth, height, 0x000000, 0).setOrigin(0);
 
         //UI
         //  general UI: should have boredom meter (background rect, filling rect, text) & pause
@@ -196,27 +165,11 @@ class Play extends Phaser.Scene {
             UiItems.push(UI[prop]);
         }
 
-        //  pause menu UI: filter (shade over the screen), background white rect, "PAUSED title text, "back to menu" info button
-        let pauseMenu = {
-            pauseFilter: this.add.rectangle(carWidth/2, height/2, carWidth, height, 0x000000, .5),
-            pauseBG: this.add.rectangle(carWidth/2, height/2, 450, 450, 0xFFFFFF),
-            pauseTitle: this.add.dynamicBitmapText(carWidth/2, height/4, "subtitleFont", "PAUSED", 80).setOrigin(0.5),
-            pauseInfo: this.add.dynamicBitmapText(carWidth/2, height/2, "titleFont", "back to menu", 32).setOrigin(0.5)
-        }
-        //      again, an array of the subobjects for camera purposes
-        for(let prop of Object.keys(pauseMenu)){
-            pauseItems.push(pauseMenu[prop]);
-            pauseMenu[prop].depth = -3;
-        }
-
         //  phone screen UI
         //      the actual interactable screen
-        let phoneInteractable = {
-            gameObject: this.add.sprite(carWidth, 0, "phoneScreen").setOrigin(0),
-            hitBool: true,
-            hitbox: this.add.rectangle(carWidth+30, 30, width-carWidth-60, height-60)
-        }
-        interactables.push(phoneInteractable);
+        let phoneInteractable = this.add.sprite(carWidth, 0, "phoneScreen").setOrigin(0)
+        phoneInteractable.depth = 1;
+        this.interactables.push(phoneInteractable);
         //      shaded rectangle for the time: top left is (15, 28)
         this.add.rectangle(carWidth+15, 28, 290, 20, 0x000000, 0.5).setOrigin(0);
         //      the actual time
@@ -240,29 +193,33 @@ class Play extends Phaser.Scene {
         let burgerEatText = this.add.dynamicBitmapText(carWidth/2, height/2+150, "subtitleFont", "click to eat", 32).setOrigin(0.5);
         burgerEatText.visible = false;
         UiItems.push(burgerEatText);
-        
+        //      soda
+        let sodaDrinkText = this.add.dynamicBitmapText(carWidth/2, height/2+150, "subtitleFont", "click to drink", 32).setOrigin(0.5);
+        sodaDrinkText.visible = false;
+        UiItems.push(sodaDrinkText);
 
-        //now that we've got all the objects in: camera config! (got a lot of it from Nathan's CameraLucida repo)
+        //CAMERAS
         this.cameras.main.setBounds(0, 0, width, height);
-        this.cameras.main.ignore(UiItems, pauseItems);
+        this.cameras.main.ignore(UiItems);
         this.cameras.main.setViewport(0, 0, carWidth, height);
-        //UI camera config
+        //  UI camera
         this.UICamera = this.cameras.add(0, 0, carWidth, height);
-        this.UICamera.ignore([road, bus].concat(pauseItems).concat(carItems))
-        //side text camera config
+        this.UICamera.ignore([road, bus].concat(carItems))
+        //  phone camera
         this.textCamera = this.cameras.add(carWidth, 0, 320, height);
         this.textCamera.setBounds(carWidth, 0, width-carWidth, height);
         this.textCamera.setViewport(carWidth, 0, width-carWidth, height);
 
-        //EVENT HANDLING
-        //  on-click
-        //      steering wheel interactivity
-        steeringWheel.gameObject.on("pointerdown", () => {
+        //EVENT HANDLING (this is so long. i tried my best to make it as organized as possible. i suggest minimizing areas you're not looking at, if you're able)
+        //  pointer events
+        //      steering wheel
+        //          on-click
+        steeringWheel.on("pointerdown", () => {
             //  dialogue for interacting with steering wheel
             this.addText(info.steering_wheel, phoneText);
             //  jiggle the steering wheel a little
             this.tweens.add({
-                targets: steeringWheel.gameObject,
+                targets: steeringWheel,
                 ease: "Bounce.easeIn",
                 paused: true,
                 yoyo: true,
@@ -273,42 +230,87 @@ class Play extends Phaser.Scene {
                 }
             }).play();
         })
-        //      glovebox interactivity
-        glovebox.gameObject.on("pointerdown", () => {
-            if(!gloveboxOpen) {
-                //open the glovebox
-                gloveboxOpen = true;
-                glovebox.gameObject.play("glovebox-open");
-                gloveboxOpenSfx.play();
-                //  alter its hitbox
-                glovebox.hitbox = gloveboxOpenHitbox;
-                glovebox.gameObject.removeInteractive();
-                glovebox.gameObject.setInteractive({
-                    hitArea: glovebox.hitbox,
-                    useHandCursor: true
-                });
-            }
-            else {
-                //close the glovebox
-                gloveboxOpen = false;
-                glovebox.gameObject.play("glovebox-close");
-                gloveboxCloseSfx.play();
-                //  alter its hitbox
-                glovebox.hitbox = gloveboxClosedHitbox;
-            }
-            //  set the actual hitbox rather than just changing the container object's attribute
-            glovebox.gameObject.input.hitArea = glovebox.hitbox
-            console.log(glovebox.hitbox);
-            console.log(glovebox.gameObject.input.hitArea);
+        //          on-hover
+        steeringWheel.on("pointerover", () => {
+            //  set to frame 1 - white outline
+            steeringWheel.setFrame(1);
         })
-        //      radio interactivity
-        //          turn on/off with switch
-        radioSwitch.gameObject.on("pointerdown", () => {
+        //          out-of-hover
+        steeringWheel.on("pointerout", () => {
+            //  put it back to normal
+            steeringWheel.setFrame(0);
+        })
+        //      glovebox
+        //          on-click
+        //              closed glovebox
+        glovebox.on("pointerdown", () => {
+            //  open the glovebox
+            gloveboxOpen = true;
+            glovebox.play("glovebox-open");
+            gloveboxOpenSfx.play();
+            glovebox.removeInteractive();
+            //  move the soda interactable in there (and wait a little, else it looks weird)
+            //  oh yeah, and the glovebox lid interactable too
+            this.time.addEvent({
+                delay: 250, // 16 fps, 4 frames, so it's a quarter of a second
+                callback: () => {
+                    //  just scoot the soda into the right place
+                    soda.setX(733);
+                    soda.setY(530);
+                    //  and the glovebox interactable, too
+                    gloveboxLid.setX(635);
+                    gloveboxLid.setY(471);
+                },
+                loop: false
+            })
+            
+        })
+        //              opened glovebox
+        gloveboxLid.on("pointerdown", () => {
+            //  close the glovebox
+            gloveboxOpen = false;
+            glovebox.play("glovebox-close");
+            gloveboxCloseSfx.play();
+            //  make the glovebox interactable again
+            glovebox.setInteractive(this.input.makePixelPerfect());
+            //  send the interactables to limbo
+            //      soda
+            soda.setX(-1000);
+            soda.setY(-1000);
+            //      glovebox lid
+            gloveboxLid.setX(-1000);
+            gloveboxLid.setY(-1000); //i know i don't actually have to set both x and y, but it just feels nicer to me, the picky programmer
+        })
+        //          on-hover
+        //              closed glovebox
+        glovebox.on("pointerover", () => {
+            //  set to frame 4 - white outline of closed glovebox
+            glovebox.setFrame(4);
+        })
+        //              opened glovebox
+        gloveboxLid.on("pointerover", () => {
+            //  set to frame 5 - white outline of open glovebox
+            gloveboxLid.setFrame(5);
+        })
+        //          out-of-hover
+        //              closed glovebox
+        glovebox.on("pointerout", () => {
+            //  back to normal
+            glovebox.setFrame(0);
+        })
+        //              opened glovebox
+        gloveboxLid.on("pointerout", () => {
+            //  back to normal - is frame 6 because of when i made it lolol
+            gloveboxLid.setFrame(6)
+        })
+        //      radio switch
+        //          on-click
+        radioSwitch.on("pointerdown", () => {
             if(!radioOn) { 
                 //  turn radio on
                 eval(currentTrack).play();
                 radioOn = true;
-                radioSwitch.gameObject.play("radio-off");
+                radioSwitch.play("radio-off");
                 radioImg.visible = true;
                 //i have a weird error where the texture doesn't update if the radio is off, so set the texture when we turn on the radio instead
                 radioImg.setTexture(currentTrack + "_img");
@@ -317,7 +319,7 @@ class Play extends Phaser.Scene {
                 //  turn radio off
                 eval(currentTrack).stop();
                 radioOn = false;
-                radioSwitch.gameObject.play("radio-on")
+                radioSwitch.play("radio-on")
                 radioImg.visible = false;
             }
 
@@ -326,7 +328,7 @@ class Play extends Phaser.Scene {
                 //      set tutorialOver to true
                 tutorialOver = true;
                 //      make all the interactable objects, interactable
-                this.makeInteractable(interactables);
+                this.makeInteractable();
                 UI.pause.setInteractive({
                     useHandCursor: true
                 })
@@ -335,11 +337,32 @@ class Play extends Phaser.Scene {
             }
             
         })
-        //          change radio station/spin dial
-        radioDial.gameObject.on("pointerdown", () => {
+        //          on-hover
+        radioSwitch.on("pointerover", () => {
+            //  set to frame 8 if on, or 9 if off - white outline
+            if(radioOn) {
+                radioSwitch.setFrame(8);
+            }
+            else {
+                radioSwitch.setFrame(9);
+            }
+        })
+        //          out-of-hover
+        radioSwitch.on("pointerout", () => {
+            //  set back to normal
+            if(radioOn) {
+                radioSwitch.setFrame(0);
+            }
+            else {
+                radioSwitch.setFrame(7);
+            }
+        })
+        //      radio dial
+        //          on-click
+        radioDial.on("pointerdown", () => {
             //tween: twist radio dial 180 degrees
             this.tweens.add({
-                targets: radioDial.gameObject,
+                targets: radioDial,
                 paused: true,
                 yoyo: false,
                 angle: {
@@ -369,12 +392,23 @@ class Play extends Phaser.Scene {
                 radioImg.setTexture(currentTrack + "_img");
             }
         });
-        //      burger interactivity
-        burger.gameObject.on("pointerdown", () => {
+        //          on-hover
+        radioDial.on("pointerover", () => {
+            //  set to frame 1 - white outline
+            radioDial.setFrame(1);
+        })
+        //          out-of-hover
+        radioDial.on("pointerout", () => {
+            //  put it back to normal
+            radioDial.setFrame(0);
+        })
+        //      burger
+        //          on-click
+        burger.on("pointerdown", () => {
             if(this.zoomed){
                 //zoom out
                 //  move burger to original position (700, 285)
-                this.zoomObject(burger.gameObject, 700, 285);
+                this.zoomObject(burger, 700, 285);
                 //  if hungry
                 if (hungry) {
                     //  make sure we keep those thoughts between us and the burger
@@ -384,12 +418,13 @@ class Play extends Phaser.Scene {
                     hungry = false;
                     burgerSfx.play();
                     //  remove the burger from the player's view
-                    burger.gameObject.setAlpha(0);
-                    burger.hitBool = true;
-                    burger.hitbox = trashHitbox;
+                    burger.setX(-1000);
+                    burger.setY(-1000);
                     //  and our functions: show dialogue, and reduce boredom meter
                     this.addText(info.burger_eaten, phoneText);
                     this.reduceBoredom(50, UI.boredomRect);
+                    //  we can also wait longer now
+                    maxHour++;
                     //  zoom out
                     this.cameras.main.setZoom(1);
                     this.zoomed = false;
@@ -398,7 +433,7 @@ class Play extends Phaser.Scene {
             else {
                 //zoom in
                 //  move burger to center
-                this.zoomObject(burger.gameObject);
+                this.zoomObject(burger);
                 //  if not hungry
                 if(!hungry){
                     //  just run dialogue
@@ -412,68 +447,119 @@ class Play extends Phaser.Scene {
                     thoughtCloud.visible = true;
                     burgerEatText.visible = true;
                 }
-                
-                
             }
-            // this.cameras.main.setZoom(zoomNum);
         });
-        //      soda interactivity
-        soda.gameObject.on("pointerdown", () => {
-            if(this.zoomed){
-                //zoom out
-                this.zoomObject(soda.gameObject, -1000, -1000); //get tossed in the Trash Zone
-                console.log("soda zoom out");
+        //          on-hover
+        burger.on("pointerover", () => {
+            //  set to frame 1 - white outline
+            burger.setFrame(1);
+        })
+        //          out-of-hover
+        burger.on("pointerout", () => {
+            //  set back to normal
+            burger.setFrame(0);
+        })
+        //      soda
+        //          on-click
+        soda.on("pointerdown", () => {
+            if(this.zoomed) {
+                //zoom out (& change texture back to side-lying soda)
+                soda.setFrame(1);
+                this.zoomObject(soda, 733, 530);
+                //  make the burger interactive again
+                burger.setInteractive(this.input.makePixelPerfect());
+                if(sodaLevel > 0) {
+                    //  gulp
+                    sodaSfx.play();
+                    //  reduce amount of soda in the can
+                    sodaLevel--;
+                    //  our external functions
+                    this.reduceBoredom(30, UI.boredomRect);
+                    //  can we still drink from it? show text
+                    let showText;
+                    if(sodaLevel == 0) {
+                        showText = info.soda_drank;
+                    }
+                    else {
+                        showText = info.soda_drinking;
+                    }
+                    this.addText(showText, phoneText);
+                }
+                //  again, make sure to keep those thoughts between us and the burger
+                thoughtCloud.visible = false;
+                sodaDrinkText.visible = false;
             }
             else {
                 //zoom in
-                this.zoomObject(soda.gameObject);
-                console.log("soda zoom in");
+                soda.setFrame(0);
+                this.zoomObject(soda);
+                //  remove burger interactivity bc it breaks everything
+                burger.removeInteractive();
+                switch(sodaLevel) {
+                    //  soda is full
+                    case 5:
+                        this.addText(info.soda_1, phoneText);
+                        //  show instructions as well
+                        thoughtCloud.visible = true;
+                        sodaDrinkText.visible = true;
+                        break;
+                    //  soda is empty
+                    case 0:
+                        this.addText(info.soda_3, phoneText);
+                        break;
+                    //  drinky :)
+                    default:
+                        this.addText(info.soda_2, phoneText);
+                        //  show instructions as well
+                        thoughtCloud.visible = true;
+                        sodaDrinkText.visible = true;
+                }
             }
         });
-
-        //      pausing/unpausing
+        //          on-hover
+        soda.on("pointerover", () => {
+            if(this.zoomed) {
+                soda.setFrame(2);
+            }
+            else {
+                soda.setFrame(3);
+            }
+        })
+        //          out-of-hover
+        soda.on("pointerout", () => {
+            if(this.zoomed) {
+                soda.setFrame(0);
+            }
+            else {
+                soda.setFrame(1);
+            }
+        })
+        //      pause button
         UI.pause.on("pointerdown", () => {
-            //if pausing, bring menu forward (depth = 3). if unpausing, send back (depth = -3)
-            let newDepth;
+            //if pausing, launch scene without pausing our current scene. if unpausing, stop it
             if(!gamePaused){ 
                 //pause game
                 gamePaused = true;
-                newDepth = 3;
                 //  stop the music!
                 eval(currentTrack).pause();
-                //  make "go back to title" button clickable
-                pauseMenu.pauseInfo.setInteractive({
-                    useHandCursor: true
-                })
                 //  make all interactable game objects unclickable
-                this.removeInteractable(interactables);
+                this.removeInteractable();
+                //  launch new scene over the top
+                this.scene.launch("pauseScene")
             }
             else { 
                 //unpause game
                 gamePaused = false;
-                newDepth = -3;
                 //  start the music!
                 eval(currentTrack).resume();
-                //  remove "go back to title" button
-                pauseMenu.pauseInfo.removeInteractive();
                 //  make all interactable game objects clickable
-                this.makeInteractable(interactables);
-            }
-            //pause menu: move to front (3) or back (-3)
-            for(let prop of Object.keys(pauseMenu)){
-                pauseMenu[prop].depth = newDepth;
+                this.makeInteractable();
+                //  stop pause scene
+                this.scene.stop("pauseScene");
             }
         });
-
-        //      "back to title" button from pause menu
-        pauseMenu.pauseInfo.on("pointerdown", () => {
-            //  we just need to stop sound and go back
-            this.game.sound.stopAll();
-            this.scene.start("menuScene");
-        })
-
         //      phone screen
-        phoneInteractable.gameObject.on("pointerdown", () => {
+        phoneInteractable.on("pointerdown", () => {
             //tutorial progression
             if(!tutorialOver) {
                 //  increase tutorialInt to change the dialogue we're showing
@@ -481,23 +567,37 @@ class Play extends Phaser.Scene {
                 if(tutorialInt > 5) {
                     //  now we need to start ending the tutorial
                     //      make radio on/off switch clickable
-                    radioSwitch.gameObject.setInteractive({
-                        hitArea: radioSwitch.hitbox,
-                        useHandCursor: true
-                    })
+                    radioSwitch.setInteractive(this.input.makePixelPerfect())
                 }
                 else {
                     //  run dialogue on click until the last dialogue is reached
                     this.addText(eval(tutorialString + tutorialInt), phoneText);
                 }
             }
-            
-        })
+            else if (gameOver) {
+                gameOver++
+                if(gameOverInt > 3) {
+                    //  transition the scene
+                    this.scene.transition({
+                        allowInput: false,
+                        target: "gameOverScene",
+                        duration: 2000,
+                        onStart: () => {
+                            this.cameras.main.fadeOut(2000, 255, 255, 255);
+                        }
+                    });
+                }
+                else {
+                    // run dialogue on click until the last dialogue is reached
+                    this.addText(eval(gameOverString + gameOverInt), phoneText);
+                }
+            }
+        })   
 
         //  timed
         //      increasing the actual clock time
         this.increaseClock = this.time.addEvent({
-            delay: 1000,
+            delay: 500, // was originally 1000, so, 1 minute in-game = 1 second real-time, but god that takes forever
             callback: () => {
                 if(!gamePaused) {
                     currentMinute++;
@@ -507,12 +607,93 @@ class Play extends Phaser.Scene {
                         currentHour++;
                         currentMinute = 0;
                         minute = "00";
-                        //  also, it should get a little darker
-                        outsideFilter.setAlpha(outsideFilter.alpha + 0.1);
                         //  progression event: get hungry after an hour
                         if(currentHour == 7){
                             this.addText(info.hungry, phoneText);
                             hungry = true;
+                        }
+                        //  end the game: my downward spiral begins
+                        if(currentHour == maxHour) {
+                            gameOver = true;
+                            gamePaused = true;
+                            //  lose game
+                            if(hungry) {
+                                //  if you're hungry still, then you go crazy :( very sad. rip. etc.
+                                gameWon = false;
+                                //  remove interactivity
+                                this.removeInteractable();
+                                UI.pause.removeInteractive();
+                                //  timed event - end dialogue
+                                this.time.addEvent({
+                                    delay: 2000,
+                                    callback: () => {
+                                        if(gameOverInt > 3){
+                                            //  scene transition to GAME WON screen
+                                            this.scene.transition({
+                                                allowInput: false,
+                                                target: "gameOverScene",
+                                                duration: 2000,
+                                                onStart: () => {
+                                                    this.game.sound.stopAll();
+                                                    this.cameras.main.fadeOut(2000, 255, 255, 255);
+                                                }
+                                            })
+                                        }
+                                        else {
+                                            this.addText(eval(gameOverString + gameOverInt), phoneText);
+                                            gameOverInt++;
+                                        }
+                                    },
+                                    loop: true
+                                })
+                            }
+                            //  win game
+                            else if(maxHour == 9) {
+                                //  we win!!! yippee!!
+                                gameWon = true;
+                                //  we can't interact with anything else though
+                                this.removeInteractable();
+                                UI.pause.removeInteractive();
+                                //  tween the bus, move the road
+                                let busTween = this.tweens.add({
+                                    targets: bus,
+                                    paused: false,
+                                    yoyo: false,
+                                    scale: {
+                                        from: bus.scale,
+                                        to: bus.scale/4,
+                                        duration: 10000
+                                    },
+                                    y: {
+                                        from: bus.y,
+                                        to: bus.y-50
+                                    }
+                                })
+                                road.play("road-move");
+                                //  timed event - end dialogue
+                                this.time.addEvent({
+                                    delay: 2000,
+                                    callback: () => {
+                                        if(gameWonInt < 5){
+                                            this.addText(eval(gameWonString + gameWonInt), phoneText);
+                                            gameWonInt++;
+                                        }
+                                        else {
+                                            //  scene transition to GAME WON screen
+                                            this.scene.transition({
+                                                allowInput: false,
+                                                target: "gameOverScene",
+                                                duration: 2000,
+                                                onStart: () => {
+                                                    this.game.sound.stopAll();
+                                                    this.cameras.main.fadeOut(2000, 255, 255, 255);
+                                                }
+                                            })
+                                        }
+                                    },
+                                    loop: true
+                                })
+                            }
                         }
                     }
                     else if(currentMinute < 10) {
@@ -538,9 +719,19 @@ class Play extends Phaser.Scene {
                     }
                 }
                 else if(UI.boredomRect.width >= UI.boredomBG.width){
+                    gameWon = false;
                     //oh no! we've lost the game (exceeded boredom meter). stop the music and switch scenes
                     this.game.sound.stopAll();
-                    this.scene.start("gameOverScene");
+                    this.scene.stop();
+                    //  scene transition
+                    this.scene.transition({
+                        allowInput: false,
+                        target: "gameOverScene",
+                        duration: 2000,
+                        onStart: () => {
+                            this.cameras.main.fadeOut(2000, 255, 255, 255);
+                        }
+                    })
                 }
             },
             loop: true
@@ -550,16 +741,12 @@ class Play extends Phaser.Scene {
             delay: 800,
             callback: () => {
                 //  set phone screen to clickable 
-                phoneInteractable.gameObject.setInteractive({
-                    hitArea: phoneInteractable.hitbox,
+                phoneInteractable.setInteractive({
                     useHandCursor: true
                 });
                 //  run first dialogue box
                 //      tutorialInt is an integer (1-5) that tracks what dialogue box we're on.
                 //      tutorialString is "info.tutorial_"
-                //      json is formatted like: info.tutorial_1
-                //      pass into this.addText(info.tutorial_x, phoneText)
-                //      so, we need to append tutorialInt to tutorialString and evaluate it
                 this.addText(eval(tutorialString + tutorialInt), phoneText);
             },
             loop: false
@@ -618,40 +805,17 @@ class Play extends Phaser.Scene {
     }
 
     //  make all interactable objects interactable (for pause toggling & end of tutorial)
-    //  parameters:
-    //      interactables - an array of container objects with the format:
-    /* 
-        {
-            gameObject: the GameObject itself
-            hitBool: whether the object has a custom hitbox
-            hitbox: the custom hitbox
-        }
-    */
-    makeInteractable(interactables){
-        for(let item of interactables) {
-            if (item.hitBool){
-                //  has a custom hitbox
-                item.gameObject.setInteractive({
-                    hitArea: item.hitbox,
-                    useHandCursor: true
-                });
-            }
-            else {
-                //  no custom hitbox
-                item.gameObject.setInteractive({
-                    useHandCursor: true
-                });
-            }
+    makeInteractable(){
+        for(let item of this.interactables) {
+            item.setInteractive(this.input.makePixelPerfect());
         }
     }
 
     //  remove interactivity of all objects (for pause toggling)
-    //  parameters:
-    //      see the comment above makeInteractable
-    removeInteractable(interactables) {
+    removeInteractable() {
         //this is much shorter, but for organization it's an external function
-        for(let item of interactables) {
-            item.gameObject.removeInteractive();
+        for(let item of this.interactables) {
+            item.removeInteractive();
         }
     }
 
@@ -666,7 +830,7 @@ class Play extends Phaser.Scene {
         }
         //  or else we just reduce it by the value (shrug)
         else {
-            boredomMeter -= reductionValue;
+            boredomMeter.width -= reductionValue;
         }
     }
 

@@ -5,13 +5,7 @@ let config = {
     render: {
         pixelArt: true
     },
-    physics: {
-        default: "arcade",
-        arcade: {
-            // debug: true
-        }
-    },
-    scene: [Load, Menu, Play, GameOver],
+    scene: [Load, Menu, Play, GameOver, Pause],
     backgroundColor: "#FFFFFF",
     scale: {
         // mode: Phaser.Scale.FIT,
@@ -25,6 +19,8 @@ let game = new Phaser.Game(config);
 
 let { width, height } = game.config;
 let carWidth = 960;
+
+let gameWon = false;
 
 
 //sources thus far:

@@ -39,4 +39,14 @@ function loadAnims(scene){
             end: 0
         })
     })
+
+    scene.anims.create({
+        key: "road-move",
+        frameRate: 8,
+        repeat: -1,
+        frames: scene.anims.generateFrameNumbers("road", {
+            start: 0,
+            end: 5
+        })
+    })
 }
