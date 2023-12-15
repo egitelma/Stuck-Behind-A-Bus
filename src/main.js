@@ -1,3 +1,7 @@
+//Digital Stuck Behind a Bus
+//By Liza Gitelman
+//I'm definitely most proud of the visual assets, but I totally thought they would take the longest to make out of everything, and they really didn't. Programming ended up requiring a lot more troubleshooting/debugging than I thought.
+
 let config = {
     type: Phaser.WEBGL,
     width: 1280,
@@ -13,8 +17,6 @@ let config = {
     }
 }
 
-let textConfig;
-
 let game = new Phaser.Game(config);
 
 let { width, height } = game.config;
@@ -23,7 +25,7 @@ let carWidth = 960;
 let gameWon = false;
 
 
-//sources thus far:
+//source links:
 
 /*
 title font: https://www.dafont.com/weekly-planner.font 
