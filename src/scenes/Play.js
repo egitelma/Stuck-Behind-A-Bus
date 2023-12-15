@@ -15,11 +15,9 @@ class Play extends Phaser.Scene {
         const graphics = this.add.graphics();
         //  booleans
         let gamePaused = true; //game starts paused, nothing is running, so we can do the tutorial
-        let gloveboxOpen = false; //false for closed box, true for opened box
         let radioOn = false; //radio starts off
         this.zoomed = false; //we're zoomed out to start
         let tutorialOver = false;
-        let gameOver = false;
         let hungry = false;
         //  integers
         let radioAngle = 0; //for now, this is only ever 0 or 180. two stations
@@ -89,9 +87,10 @@ class Play extends Phaser.Scene {
             volume: 1,
             loop: false
         });
+        //      click sound for radio on/off
         let switchSfx = this.sound.add("clickSwitch", {
             mute: false,
-            volume: 1,
+            volume: 0.75,
             loop: false
         });
 
@@ -248,7 +247,6 @@ class Play extends Phaser.Scene {
         //              closed glovebox
         glovebox.on("pointerdown", () => {
             //  open the glovebox
-            gloveboxOpen = true;
             glovebox.play("glovebox-open");
             gloveboxOpenSfx.play();
             glovebox.removeInteractive();
@@ -271,7 +269,6 @@ class Play extends Phaser.Scene {
         //              opened glovebox
         gloveboxLid.on("pointerdown", () => {
             //  close the glovebox
-            gloveboxOpen = false;
             glovebox.play("glovebox-close");
             gloveboxCloseSfx.play();
             //  make the glovebox interactable again
@@ -601,7 +598,6 @@ class Play extends Phaser.Scene {
                         }
                         //  end the game: my downward spiral begins
                         if(currentHour == maxHour) {
-                            gameOver = true;
                             gamePaused = true;
                             //  lose game
                             if(hungry) {
@@ -666,7 +662,6 @@ class Play extends Phaser.Scene {
                 else if(UI.boredomRect.width >= UI.boredomBG.width){
                     gameWon = false;
                     //oh no! we've lost the game (exceeded boredom meter). stop the music and switch scenes
-                    //  scene transition
                     //  remove interactivity
                     this.removeInteractable();
                     UI.pause.removeInteractive();
@@ -696,6 +691,7 @@ class Play extends Phaser.Scene {
         let endBadDialogue = this.time.addEvent({
             delay: 2000,
             callback: () => {
+                //  whena all the end dialogue has been exhausted
                 if(gameOverInt > 3){
                     //  scene transition to GAME WON screen
                     this.scene.transition({
@@ -708,6 +704,7 @@ class Play extends Phaser.Scene {
                         }
                     })
                 }
+                //  continually update the dialogue
                 else {
                     this.addText(eval(gameOverString + gameOverInt), phoneText);
                     gameOverInt++;
@@ -720,10 +717,12 @@ class Play extends Phaser.Scene {
         let endGoodDialogue = this.time.addEvent({
             delay: 2000,
             callback: () => {
+                //  continuously run end dialogue
                 if(gameWonInt < 5){
                     this.addText(eval(gameWonString + gameWonInt), phoneText);
                     gameWonInt++;
                 }
+                //  once we reach the last dialogue
                 else {
                     //  scene transition to GAME WON screen
                     this.scene.transition({

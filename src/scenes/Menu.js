@@ -71,6 +71,7 @@ class Menu extends Phaser.Scene {
             busTween.play();
             titleTween.play();
 
+            //  wait until the tween ends to switch scenes
             this.time.addEvent({
                 delay: 2000,
                 callback: () => {
