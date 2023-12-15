@@ -156,7 +156,7 @@ class Play extends Phaser.Scene {
         let UI = {
             //boredom meter
             boredomBG: this.add.rectangle(5, 5, 200, 30, 0xFFFFFF).setOrigin(0),
-            boredomRect: this.add.rectangle(5, 5, 180, 30, 0xFF0000).setOrigin(0),
+            boredomRect: this.add.rectangle(5, 5, 0, 30, 0xFF0000).setOrigin(0),
             boredomText: this.add.dynamicBitmapText(5, 5, "subtitleFont", "boredom meter", 32).setOrigin(0),
             //pause button
             pause: this.add.sprite(carWidth-32, 32, "pause")
@@ -218,6 +218,8 @@ class Play extends Phaser.Scene {
         steeringWheel.on("pointerdown", () => {
             //  dialogue for interacting with steering wheel
             this.addText(info.steering_wheel, phoneText);
+            //  reduce a teeny bit of boredom
+            this.reduceBoredom(5, UI.boredomRect);
             //  jiggle the steering wheel a little
             this.tweens.add({
                 targets: steeringWheel,
