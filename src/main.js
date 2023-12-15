@@ -37,4 +37,5 @@ eating sfx: https://pixabay.com/sound-effects/eating-sound-effect-36186/
 drinking sfx: https://pixabay.com/sound-effects/heavy-swallowwav-14682/ 
 open glovebox sfx: https://pixabay.com/sound-effects/open-toolbox-103809/ 
 close glovebox sfx: https://pixabay.com/sound-effects/lid-close-98389/ 
+click switch sfx: https://pixabay.com/sound-effects/click-button-140881/ 
 */

@@ -89,6 +89,11 @@ class Play extends Phaser.Scene {
             volume: 1,
             loop: false
         });
+        let switchSfx = this.sound.add("clickSwitch", {
+            mute: false,
+            volume: 1,
+            loop: false
+        });
 
         //HITBOXES
         //  a little out of place - radio switch gradient/hitbox must be defined separately
@@ -138,7 +143,6 @@ class Play extends Phaser.Scene {
         let soda = this.add.sprite(-1000, -1000, "soda", 1);
         carItems.push(soda);
         this.interactables.push(soda);
-
         //  outside the car
         //      road
         let road = this.add.sprite(0, 0, "road").setOrigin(0);
@@ -146,15 +150,13 @@ class Play extends Phaser.Scene {
         //      bus
         let bus = this.add.image(500, 10, "busBack").setOrigin(0.5, 0.25).setScale(0.9);
         bus.depth = -2;
-        //      filter for how dark it is outside
-        let outsideFilter = this.add.rectangle(0, 0, carWidth, height, 0x000000, 0).setOrigin(0);
 
         //UI
         //  general UI: should have boredom meter (background rect, filling rect, text) & pause
         let UI = {
             //boredom meter
             boredomBG: this.add.rectangle(5, 5, 200, 30, 0xFFFFFF).setOrigin(0),
-            boredomRect: this.add.rectangle(5, 5, 0, 30, 0xFF0000).setOrigin(0),
+            boredomRect: this.add.rectangle(5, 5, 180, 30, 0xFF0000).setOrigin(0),
             boredomText: this.add.dynamicBitmapText(5, 5, "subtitleFont", "boredom meter", 32).setOrigin(0),
             //pause button
             pause: this.add.sprite(carWidth-32, 32, "pause")
@@ -164,7 +166,6 @@ class Play extends Phaser.Scene {
         for(let prop of Object.keys(UI)){
             UiItems.push(UI[prop]);
         }
-
         //  phone screen UI
         //      the actual interactable screen
         let phoneInteractable = this.add.sprite(carWidth, 0, "phoneScreen").setOrigin(0)
@@ -306,6 +307,8 @@ class Play extends Phaser.Scene {
         //      radio switch
         //          on-click
         radioSwitch.on("pointerdown", () => {
+            //  play sfx
+            switchSfx.play();
             if(!radioOn) { 
                 //  turn radio on
                 eval(currentTrack).play();
@@ -574,24 +577,6 @@ class Play extends Phaser.Scene {
                     this.addText(eval(tutorialString + tutorialInt), phoneText);
                 }
             }
-            else if (gameOver) {
-                gameOver++
-                if(gameOverInt > 3) {
-                    //  transition the scene
-                    this.scene.transition({
-                        allowInput: false,
-                        target: "gameOverScene",
-                        duration: 2000,
-                        onStart: () => {
-                            this.cameras.main.fadeOut(2000, 255, 255, 255);
-                        }
-                    });
-                }
-                else {
-                    // run dialogue on click until the last dialogue is reached
-                    this.addText(eval(gameOverString + gameOverInt), phoneText);
-                }
-            }
         })   
 
         //  timed
@@ -623,29 +608,7 @@ class Play extends Phaser.Scene {
                                 //  remove interactivity
                                 this.removeInteractable();
                                 UI.pause.removeInteractive();
-                                //  timed event - end dialogue
-                                this.time.addEvent({
-                                    delay: 2000,
-                                    callback: () => {
-                                        if(gameOverInt > 3){
-                                            //  scene transition to GAME WON screen
-                                            this.scene.transition({
-                                                allowInput: false,
-                                                target: "gameOverScene",
-                                                duration: 2000,
-                                                onStart: () => {
-                                                    this.game.sound.stopAll();
-                                                    this.cameras.main.fadeOut(2000, 255, 255, 255);
-                                                }
-                                            })
-                                        }
-                                        else {
-                                            this.addText(eval(gameOverString + gameOverInt), phoneText);
-                                            gameOverInt++;
-                                        }
-                                    },
-                                    loop: true
-                                })
+                                endBadDialogue.paused = false;
                             }
                             //  win game
                             else if(maxHour == 9) {
@@ -671,28 +634,7 @@ class Play extends Phaser.Scene {
                                 })
                                 road.play("road-move");
                                 //  timed event - end dialogue
-                                this.time.addEvent({
-                                    delay: 2000,
-                                    callback: () => {
-                                        if(gameWonInt < 5){
-                                            this.addText(eval(gameWonString + gameWonInt), phoneText);
-                                            gameWonInt++;
-                                        }
-                                        else {
-                                            //  scene transition to GAME WON screen
-                                            this.scene.transition({
-                                                allowInput: false,
-                                                target: "gameOverScene",
-                                                duration: 2000,
-                                                onStart: () => {
-                                                    this.game.sound.stopAll();
-                                                    this.cameras.main.fadeOut(2000, 255, 255, 255);
-                                                }
-                                            })
-                                        }
-                                    },
-                                    loop: true
-                                })
+                                endGoodDialogue.paused = false;
                             }
                         }
                     }
@@ -718,20 +660,15 @@ class Play extends Phaser.Scene {
                         UI.boredomRect.width+=2;
                     }
                 }
+                //  lose game
                 else if(UI.boredomRect.width >= UI.boredomBG.width){
                     gameWon = false;
                     //oh no! we've lost the game (exceeded boredom meter). stop the music and switch scenes
-                    this.game.sound.stopAll();
-                    this.scene.stop();
                     //  scene transition
-                    this.scene.transition({
-                        allowInput: false,
-                        target: "gameOverScene",
-                        duration: 2000,
-                        onStart: () => {
-                            this.cameras.main.fadeOut(2000, 255, 255, 255);
-                        }
-                    })
+                    //  remove interactivity
+                    this.removeInteractable();
+                    UI.pause.removeInteractive();
+                    endBadDialogue.paused = false;
                 }
             },
             loop: true
@@ -750,6 +687,56 @@ class Play extends Phaser.Scene {
                 this.addText(eval(tutorialString + tutorialInt), phoneText);
             },
             loop: false
+        })
+
+        //      end dialogue
+        //          bad end
+        let endBadDialogue = this.time.addEvent({
+            delay: 2000,
+            callback: () => {
+                if(gameOverInt > 3){
+                    //  scene transition to GAME WON screen
+                    this.scene.transition({
+                        allowInput: false,
+                        target: "gameOverScene",
+                        duration: 2000,
+                        onStart: () => {
+                            this.game.sound.stopAll();
+                            this.cameras.main.fadeOut(2000, 255, 255, 255);
+                        }
+                    })
+                }
+                else {
+                    this.addText(eval(gameOverString + gameOverInt), phoneText);
+                    gameOverInt++;
+                }
+            },
+            loop: true,
+            paused: true
+        })
+        //          good end
+        let endGoodDialogue = this.time.addEvent({
+            delay: 2000,
+            callback: () => {
+                if(gameWonInt < 5){
+                    this.addText(eval(gameWonString + gameWonInt), phoneText);
+                    gameWonInt++;
+                }
+                else {
+                    //  scene transition to GAME WON screen
+                    this.scene.transition({
+                        allowInput: false,
+                        target: "gameOverScene",
+                        duration: 2000,
+                        onStart: () => {
+                            this.game.sound.stopAll();
+                            this.cameras.main.fadeOut(2000, 255, 255, 255);
+                        }
+                    })
+                }
+            },
+            loop: true,
+            paused: true
         })
 
     } // **END CREATE**

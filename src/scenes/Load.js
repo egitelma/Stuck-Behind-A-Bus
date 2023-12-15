@@ -7,13 +7,22 @@ class Load extends Phaser.Scene {
         //I got the loading bar from Nathan's Github - here's the source he had linked:
         // https://rexrainbow.github.io/phaser3-rex-notes/docs/site/loader/
         let loadingBar = this.add.graphics();
+        let loadingText = this.add.text(width/2, height/3, "loading...", {
+            fontFamily: "Courier New", //i'm so tired of bitmap fonts
+            fontSize: "48px",
+            color: "#000000",
+            align: "center"
+        });
+        //  increase size of bar as game loads
         this.load.on("progress", (value) => {
             loadingBar.clear();
             loadingBar.fillStyle(0x000000, 1);
             loadingBar.fillRect(0, height/2, width * value, 5);
         })
+        //  destroy loading bar when done
         this.load.on("Complete", () => {
             loadingBar.destroy();
+            loadingText.destroy();
             
         })
         //load json
@@ -28,6 +37,7 @@ class Load extends Phaser.Scene {
         this.load.image("track2_img", "track_2.png");
         this.load.image("phoneScreen", "phone_screen.png");
         this.load.image("thoughtCloud", "thought_cloud.png");
+        this.load.image("roadSide", "road_side.png");
         //  spritesheets
         this.load.spritesheet("steeringWheel", "wheel.png", {
             frameWidth: 347,
@@ -76,6 +86,7 @@ class Load extends Phaser.Scene {
         this.load.bitmapFont("titleFont", "title_font.png", "title_font.xml");
         this.load.bitmapFont("subtitleFont", "subtitle_font.png", "subtitle_font.xml");
         this.load.bitmapFont("textFont", "text_font.png", "text_font.xml");
+        this.load.bitmapFont("textFontWhite", "text_font_white.png", "text_font_white.xml");
         //load sound
         this.load.path = "./assets/audio/"
         this.load.audio("track1", "track_1.mp3");
@@ -86,10 +97,11 @@ class Load extends Phaser.Scene {
         this.load.audio("sodaDrink", "gulp_sfx.mp3");
         this.load.audio("openGlovebox", "open_box_sfx.mp3");
         this.load.audio("closeGlovebox", "close_box_sfx.mp3");
-
+        this.load.audio("clickSwitch", "click.mp3");
     }
 
     create() {
+        //  switch to menu scene
         this.scene.start("menuScene");
     }
 }
