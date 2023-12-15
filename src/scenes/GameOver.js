@@ -39,7 +39,8 @@ class GameOver extends Phaser.Scene {
         this.add.bitmapText(30, 290, "textFontWhite", "Open Toolbox by Pixabay", 12).setOrigin(0);
         this.add.bitmapText(30, 310, "textFontWhite", "lid close by Pixabay", 12).setOrigin(0);
         this.add.bitmapText(30, 330, "textFontWhite", "Click Button by UNIVERSFIELD", 12).setOrigin(0);
-        this.add.bitmapText(30, 350, "textFontWhite", "043210_CarStartSkidCrash.wav by Pixabay", 12).setOrigin(0);
+        this.add.bitmapText(30, 350, "textFontWhite", "043210_CarStartSkidCrash.wav by", 12).setOrigin(0);
+        this.add.bitmapText(30, 370, "textFontWhite", "Pixabay", 12).setOrigin(0);
         //  button to be clicked on
         let clicker = this.add.bitmapText(width/3*2, height/3*2, "titleFont", "back to menu", 32).setOrigin(0.5).setInteractive({
             useHandCursor: true
